@@ -313,6 +313,14 @@ namespace BubbleBuffs {
             }
         }
 
+        public bool UseSimpleOverlay {
+            get => SavedState.UseSimpleOverlay;
+            set {
+                SavedState.UseSimpleOverlay = value;
+                Save(true);
+            }
+        }
+
         //private static Dictionary<Guid, List<ContextActionApplyBuff>> CachedBuffEffects;
 
         public void AddBuff(UnitEntityData dude, Kingmaker.UnitLogic.Spellbook book, AbilityData spell, AbilityData baseSpell, IReactiveProperty<int> credits, bool newCredit, int creditClamp, int charIndex, bool archmageArmor = false, Category category = Category.Spell) {

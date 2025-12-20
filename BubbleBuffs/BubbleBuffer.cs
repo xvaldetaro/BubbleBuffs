@@ -334,6 +334,13 @@ namespace BubbleBuffs {
                 img.color = new Color(1, 1, 1, UnityEngine.Random.Range(0f, 1.0f));
             });
 
+            var (simpleOverlay, simpleOverlayRect) = UIHelpers.Create("simple-overlay", pRect);
+            simpleOverlayRect.FillParent();
+            portrait.SimpleOverlay = simpleOverlay.MakeComponent<Image>(img => {
+                img.gameObject.SetActive(false);
+                img.color = new Color(0.2f, 0.7f, 0.2f, 0.5f);
+            });
+
             var (aoeOverlay, aoeOverlayRect) = UIHelpers.Create("aoe-overlay", pRect);
             aoeOverlayRect.FillParent();
             //aoeOverlayRect.anchorMax = new Vector2(1, 0.4f);
@@ -623,6 +630,14 @@ namespace BubbleBuffs {
                 toggle.isOn = state.VerboseCasting;
                 toggle.onValueChanged.AddListener(enabled => {
                     state.VerboseCasting = enabled;
+                });
+            }
+
+            {
+                var (toggle, _) = MakeSettingsToggle(togglePrefab, panel.transform, "setting-simpleoverlay".i8());
+                toggle.isOn = state.UseSimpleOverlay;
+                toggle.onValueChanged.AddListener(enabled => {
+                    state.UseSimpleOverlay = enabled;
                 });
             }
 
@@ -2003,6 +2018,7 @@ namespace BubbleBuffs {
         public OwlcatButton Expand;
         public Image Overlay;
         public Image FullOverlay;
+        public Image SimpleOverlay;
         public bool State = false;
 
         public void ExpandOff() {
@@ -2319,46 +2335,71 @@ namespace BubbleBuffs {
 
         private void UpdateTargetBuffColor(BubbleBuff buff, int i) {
             var fullOverlay = targets[i].FullOverlay;
+            var simpleOverlay = targets[i].SimpleOverlay;
             targets[i].Button.Interactable = true;
-            if (buff == null) {
+
+            if (state.UseSimpleOverlay) {
                 fullOverlay.gameObject.SetActive(false);
-                return;
-            }
-            bool isMass = false;
-            bool massGood = false;
-
-            if (buff.IsMass && buff.Requested > 0) {
-                isMass = true;
-                if (buff.Fulfilled > 0)
-                    massGood = true;
-            }
-
-            var me = Bubble.Group[i];
-
-
-            if (isMass && !buff.UnitWants(me)) {
-                var target = massGood ? massGoodColor : massBadColor;
-                targets[i].Overlay.gameObject.SetActive(true);
-                var current = targets[i].Overlay.color;
-                targets[i].Overlay.color = new Color(target.r, target.g, target.b, current.a);
-            } else {
                 targets[i].Overlay.gameObject.SetActive(false);
-            }
 
-            fullOverlay.gameObject.SetActive(true);
+                if (buff == null) {
+                    simpleOverlay.gameObject.SetActive(false);
+                    return;
+                }
 
-            if (!buff.CanTarget(me)) {
-                fullOverlay.color = Color.red;
-                targets[i].Button.Interactable = false;
+                var me = Bubble.Group[i];
 
-            } else if (buff.UnitWants(me)) {
-                if (buff.UnitGiven(me)) {
-                    fullOverlay.color = Color.green;
+                if (!buff.CanTarget(me)) {
+                    targets[i].Button.Interactable = false;
+                    simpleOverlay.gameObject.SetActive(false);
+                } else if (buff.UnitWants(me)) {
+                    simpleOverlay.gameObject.SetActive(true);
+                    simpleOverlay.color = new Color(0.2f, 0.7f, 0.2f, 0.5f);
                 } else {
-                    fullOverlay.color = Color.yellow;
+                    simpleOverlay.gameObject.SetActive(false);
                 }
             } else {
-                fullOverlay.color = Color.gray;
+                simpleOverlay.gameObject.SetActive(false);
+
+                if (buff == null) {
+                    fullOverlay.gameObject.SetActive(false);
+                    return;
+                }
+                bool isMass = false;
+                bool massGood = false;
+
+                if (buff.IsMass && buff.Requested > 0) {
+                    isMass = true;
+                    if (buff.Fulfilled > 0)
+                        massGood = true;
+                }
+
+                var me = Bubble.Group[i];
+
+                if (isMass && !buff.UnitWants(me)) {
+                    var target = massGood ? massGoodColor : massBadColor;
+                    targets[i].Overlay.gameObject.SetActive(true);
+                    var current = targets[i].Overlay.color;
+                    targets[i].Overlay.color = new Color(target.r, target.g, target.b, current.a);
+                } else {
+                    targets[i].Overlay.gameObject.SetActive(false);
+                }
+
+                fullOverlay.gameObject.SetActive(true);
+
+                if (!buff.CanTarget(me)) {
+                    fullOverlay.color = Color.red;
+                    targets[i].Button.Interactable = false;
+
+                } else if (buff.UnitWants(me)) {
+                    if (buff.UnitGiven(me)) {
+                        fullOverlay.color = Color.green;
+                    } else {
+                        fullOverlay.color = Color.yellow;
+                    }
+                } else {
+                    fullOverlay.color = Color.gray;
+                }
             }
         }
 

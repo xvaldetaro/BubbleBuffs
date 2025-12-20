@@ -30,6 +30,8 @@ namespace BubbleBuffs {
         [JsonProperty]
         public bool OverwriteBuff;
         [JsonProperty]
+        public bool UseSimpleOverlay = true;
+        [JsonProperty]
         public int Version;
     }
 
