@@ -410,6 +410,10 @@ namespace BubbleBuffs {
         public ReactiveProperty<bool> ShowShort = new(true);
         public ReactiveProperty<bool> ShowHidden = new(false);
         public ReactiveProperty<string> NameFilter = new("");
+        public ReactiveProperty<bool> ShowGroupNormal = new(true);
+        public ReactiveProperty<bool> ShowGroupImportant = new(true);
+        public ReactiveProperty<bool> ShowGroupShort = new(true);
+        public ReactiveProperty<bool> ShowGroupCombat = new(true);
         public ButtonGroup<Category> CurrentCategory;
 
         private List<UnitEntityData> Group => Game.Instance.SelectionCharacter.ActualGroup;
@@ -494,6 +498,18 @@ namespace BubbleBuffs {
                 RefreshFiltering();
             });
             ShowShort.Subscribe<bool>(show => {
+                RefreshFiltering();
+            });
+            ShowGroupNormal.Subscribe<bool>(show => {
+                RefreshFiltering();
+            });
+            ShowGroupImportant.Subscribe<bool>(show => {
+                RefreshFiltering();
+            });
+            ShowGroupShort.Subscribe<bool>(show => {
+                RefreshFiltering();
+            });
+            ShowGroupCombat.Subscribe<bool>(show => {
                 RefreshFiltering();
             });
             NameFilter.Subscribe<string>(val => {
@@ -718,6 +734,10 @@ namespace BubbleBuffs {
             GameObject showRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
             GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
             GameObject sortByName = MakeToggle(togglePrefab, filterRect, .6f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
+            GameObject showGroupNormal = MakeToggle(togglePrefab, filterRect, .6f, .5f, "filter.group.normal".i8(), "bubble-toggle-show-group-normal", scale);
+            GameObject showGroupImportant = MakeToggle(togglePrefab, filterRect, .6f, .5f, "filter.group.important".i8(), "bubble-toggle-show-group-important", scale);
+            GameObject showGroupShort = MakeToggle(togglePrefab, filterRect, .6f, .5f, "filter.group.short".i8(), "bubble-toggle-show-group-short", scale);
+            GameObject showGroupCombat = MakeToggle(togglePrefab, filterRect, .6f, .5f, "filter.group.combat".i8(), "bubble-toggle-show-group-combat", scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -741,6 +761,10 @@ namespace BubbleBuffs {
             ShowRequested.BindToView(showRequested);
             ShowNotRequested.BindToView(showNotRequested);
             SortByName.BindToView(sortByName);
+            ShowGroupNormal.BindToView(showGroupNormal);
+            ShowGroupImportant.BindToView(showGroupImportant);
+            ShowGroupShort.BindToView(showGroupShort);
+            ShowGroupCombat.BindToView(showGroupCombat);
 
             CurrentCategory.Selected.Value = Category.Spell;
         }
@@ -801,6 +825,16 @@ namespace BubbleBuffs {
                 if (!ShowHidden.Value && buff.HideBecause(HideReason.Blacklisted))
                     show = false;
                 if (!ShowShort.value && buff.HideBecause(HideReason.Short))
+                    show = false;
+
+                bool showForGroup = buff.InGroup switch {
+                    BuffGroup.Long => ShowGroupNormal.Value,
+                    BuffGroup.Important => ShowGroupImportant.Value,
+                    BuffGroup.Short => ShowGroupShort.Value,
+                    BuffGroup.Combat => ShowGroupCombat.Value,
+                    _ => true
+                };
+                if (!showForGroup)
                     show = false;
 
                 widget.SetActive(show);
