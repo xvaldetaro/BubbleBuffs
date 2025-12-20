@@ -590,10 +590,10 @@ namespace BubbleBuffs {
             int width = 450;
             if (Language.Locale == Locale.deDE)
                 width = 550;
-            popGrid.cellSize = new Vector2(width, 40);
-            popGrid.padding.left = 25;
-            popGrid.padding.top = 12;
-            popGrid.padding.bottom = 50;
+            popGrid.cellSize = new Vector2(width, 35);
+            popGrid.padding.left = 20;
+            popGrid.padding.top = 10;
+            popGrid.padding.bottom = 40;
             popGrid.startCorner = GridLayoutGroup.Corner.LowerLeft;
 
             {
@@ -709,12 +709,12 @@ namespace BubbleBuffs {
             var searchRect = search.RootGameObject.transform as RectTransform;
             searchRect.sizeDelta = new Vector2(280, 100);
 
-            const float scale = 0.8f;
-            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.8f, .5f, "showhidden".i8(), "bubble-toggle-show-hidden", scale);
-            GameObject showShort = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showshort".i8(), "bubble-toggle-show-short", scale);
-            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
-            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .8f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
-            GameObject sortByName = MakeToggle(togglePrefab, filterRect, .8f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
+            const float scale = 0.7f;
+            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.7f, .5f, "showhidden".i8(), "bubble-toggle-show-hidden", scale);
+            GameObject showShort = MakeToggle(togglePrefab, filterRect, .7f, .5f, "showshort".i8(), "bubble-toggle-show-short", scale);
+            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .7f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
+            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .7f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
+            GameObject sortByName = MakeToggle(togglePrefab, filterRect, .7f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -865,13 +865,13 @@ namespace BubbleBuffs {
             var spellPopGrid = spellPopout.AddComponent<GridLayoutGroup>();
             spellPopGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             spellPopGrid.constraintCount = 1;
-            int spellPopWidth = 450;
+            int spellPopWidth = 400;
             if (Language.Locale == Locale.deDE)
-                spellPopWidth = 650;
-            spellPopGrid.cellSize = new Vector2(spellPopWidth, 40);
-            spellPopGrid.padding.left = 25;
-            spellPopGrid.padding.top = 12;
-            spellPopGrid.padding.bottom = 12;
+                spellPopWidth = 580;
+            spellPopGrid.cellSize = new Vector2(spellPopWidth, 35);
+            spellPopGrid.padding.left = 20;
+            spellPopGrid.padding.top = 10;
+            spellPopGrid.padding.bottom = 10;
 
             GameObject MakeSpellLabel(string text) {
                 var labelRoot = GameObject.Instantiate(togglePrefab, spellPopout.transform);
@@ -970,13 +970,13 @@ namespace BubbleBuffs {
             var popGrid = casterPopout.AddComponent<GridLayoutGroup>();
             popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             popGrid.constraintCount = 1;
-            int width = 550;
+            int width = 500;
             if (Language.Locale == Locale.deDE)
-                width = 650;
-            popGrid.cellSize = new Vector2(width, 40);
-            popGrid.padding.left = 25;
-            popGrid.padding.top = 12;
-            popGrid.padding.bottom = 12;
+                width = 580;
+            popGrid.cellSize = new Vector2(width, 35);
+            popGrid.padding.left = 20;
+            popGrid.padding.top = 10;
+            popGrid.padding.bottom = 10;
 
 
 
@@ -2118,7 +2118,7 @@ namespace BubbleBuffs {
             availableBuffs.transform.SetAsFirstSibling();
             Main.Verbose("made new buff list");
             availableBuffs.name = "AvailableBuffList";
-            availableBuffs.GetComponentInChildren<GridLayoutGroupWorkaround>().constraintCount = 5;
+            availableBuffs.GetComponentInChildren<GridLayoutGroupWorkaround>().constraintCount = 6;
             Main.Verbose("set constraint count");
             var listRect = availableBuffs.transform as RectTransform;
             listRect.localPosition = Vector2.zero;
@@ -2130,7 +2130,7 @@ namespace BubbleBuffs {
             GameObject.Destroy(listRect.Find("ToggleAllSpells")?.gameObject);
             GameObject.Destroy(listRect.Find("ToggleMetamagic")?.gameObject);
             var scrollContent = availableBuffs.transform.Find("StandardScrollView/Viewport/Content");
-            scrollContent.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+            scrollContent.localScale = new Vector3(0.7f, 0.7f, 0.7f);
             Main.Verbose("got scroll content");
             Main.Verbose($"destroying old stuff: {scrollContent.childCount}");
             int toDestroy = scrollContent.childCount;
@@ -2339,7 +2339,7 @@ namespace BubbleBuffs {
                 h.constraint = GridLayoutGroup.Constraint.FixedRowCount;
                 h.constraintCount = 1;
                 h.childAlignment = TextAnchor.MiddleCenter;
-                h.cellSize = new Vector2(300, 100);
+                h.cellSize = new Vector2(250, 80);
             });
 
             foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
