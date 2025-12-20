@@ -642,7 +642,7 @@ namespace BubbleBuffs {
         public static GameObject selectedPrefab;
 
 
-        public static GameObject MakeButton(string title, Transform parent) {
+        public static GameObject MakeButton(string title, Transform parent, float scale = 1f) {
             var button = GameObject.Instantiate(buttonPrefab, parent);
             button.GetComponentInChildren<TextMeshProUGUI>().text = title;
             var buttonRect = button.transform as RectTransform;
@@ -651,15 +651,18 @@ namespace BubbleBuffs {
             buttonRect.pivot = new Vector2(1, 1);
             buttonRect.localPosition = Vector3.zero;
             buttonRect.anchoredPosition = Vector2.zero;
+            buttonRect.localScale = new Vector3(scale, scale, scale);
             return button;
         }
 
         public class ButtonGroup<T> {
             public ReactiveProperty<T> Selected = new();
             private readonly Transform content;
+            private readonly float scale;
 
-            public ButtonGroup(Transform content) {
+            public ButtonGroup(Transform content, float scale = 1f) {
                 this.content = content;
+                this.scale = scale;
             }
 
             public T Value {
@@ -668,7 +671,7 @@ namespace BubbleBuffs {
             }
 
             public void Add(T value, string title) {
-                var button = MakeButton(title, content);
+                var button = MakeButton(title, content, scale);
 
                 var selection = GameObject.Instantiate(selectedPrefab, button.transform);
                 selection.SetActive(false);
@@ -709,12 +712,12 @@ namespace BubbleBuffs {
             var searchRect = search.RootGameObject.transform as RectTransform;
             searchRect.sizeDelta = new Vector2(280, 100);
 
-            const float scale = 0.7f;
-            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.7f, .5f, "showhidden".i8(), "bubble-toggle-show-hidden", scale);
-            GameObject showShort = MakeToggle(togglePrefab, filterRect, .7f, .5f, "showshort".i8(), "bubble-toggle-show-short", scale);
-            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .7f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
-            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .7f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
-            GameObject sortByName = MakeToggle(togglePrefab, filterRect, .7f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
+            const float scale = 0.6f;
+            GameObject showHidden = MakeToggle(togglePrefab, filterRect, 0.6f, .5f, "showhidden".i8(), "bubble-toggle-show-hidden", scale);
+            GameObject showShort = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showshort".i8(), "bubble-toggle-show-short", scale);
+            GameObject showRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
+            GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
+            GameObject sortByName = MakeToggle(togglePrefab, filterRect, .6f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -724,7 +727,7 @@ namespace BubbleBuffs {
             categoryRect.anchorMin = new Vector2(1 - filterRect.anchorMax.x, 0.1f);
             categoryRect.anchorMax = new Vector2(1 - filterRect.anchorMin.x, 0.4f);
 
-            CurrentCategory = new ButtonGroup<Category>(categoryRect);
+            CurrentCategory = new ButtonGroup<Category>(categoryRect, 0.7f);
             CurrentCategory.Selected.Subscribe<Category>(_ => RefreshFiltering());
 
             CurrentCategory.Add(Category.Spell, "cat.spells".i8());
@@ -1194,7 +1197,7 @@ namespace BubbleBuffs {
             groupRect.anchoredPosition = new Vector2(-20, 0);
             groupRect.sizeDelta = new Vector2(140, 130);
 
-            var buffGroup = new ButtonGroup<BuffGroup>(groupRect);
+            var buffGroup = new ButtonGroup<BuffGroup>(groupRect, 0.7f);
 
             buffGroup.Add(BuffGroup.Long, "group.normal".i8());
             buffGroup.Add(BuffGroup.Important, "group.important".i8());
