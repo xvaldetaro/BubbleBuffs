@@ -410,10 +410,7 @@ namespace BubbleBuffs {
         public ReactiveProperty<bool> ShowShort = new(true);
         public ReactiveProperty<bool> ShowHidden = new(false);
         public ReactiveProperty<string> NameFilter = new("");
-        public ReactiveProperty<bool> ShowGroupNormal = new(true);
-        public ReactiveProperty<bool> ShowGroupImportant = new(true);
-        public ReactiveProperty<bool> ShowGroupShort = new(true);
-        public ReactiveProperty<bool> ShowGroupCombat = new(true);
+        public ReactiveProperty<BuffGroup?> GroupFilter = new(null); // null = show all groups
         public ButtonGroup<Category> CurrentCategory;
 
         private List<UnitEntityData> Group => Game.Instance.SelectionCharacter.ActualGroup;
@@ -500,16 +497,7 @@ namespace BubbleBuffs {
             ShowShort.Subscribe<bool>(show => {
                 RefreshFiltering();
             });
-            ShowGroupNormal.Subscribe<bool>(show => {
-                RefreshFiltering();
-            });
-            ShowGroupImportant.Subscribe<bool>(show => {
-                RefreshFiltering();
-            });
-            ShowGroupShort.Subscribe<bool>(show => {
-                RefreshFiltering();
-            });
-            ShowGroupCombat.Subscribe<bool>(show => {
+            GroupFilter.Subscribe<BuffGroup?>(group => {
                 RefreshFiltering();
             });
             NameFilter.Subscribe<string>(val => {
@@ -712,6 +700,54 @@ namespace BubbleBuffs {
             return rect;
         }
 
+        private TextMeshProUGUI groupFilterLabel;
+
+        private void MakeGroupFilterPopout(GameObject togglePrefab, Transform parent, float scale) {
+            // Create button container
+            var buttonObj = MakeButton("filter.group.all".i8(), parent, scale);
+            groupFilterLabel = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
+
+            // Create popout panel
+            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
+            var panel = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, buttonObj.transform);
+            panel.DestroyComponents<ActionBarConvertedPCView>();
+            panel.DestroyComponents<GridLayoutGroup>();
+            panel.SetActive(false);
+            panel.Rect().SetAnchor(1, 0.5f);
+            panel.Rect().pivot = new Vector2(0, 0.5f);
+            panel.Rect().anchoredPosition = new Vector2(5, 0);
+            panel.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
+
+            var popGrid = panel.AddComponent<GridLayoutGroup>();
+            popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            popGrid.constraintCount = 1;
+            popGrid.cellSize = new Vector2(200, 30);
+            popGrid.padding.left = 15;
+            popGrid.padding.top = 8;
+            popGrid.padding.bottom = 8;
+
+            // Create option buttons
+            void AddOption(BuffGroup? group, string labelKey) {
+                var optionButton = MakeButton(labelKey.i8(), panel.transform, 0.8f);
+                optionButton.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                    GroupFilter.Value = group;
+                    groupFilterLabel.text = labelKey.i8();
+                    panel.SetActive(false);
+                });
+            }
+
+            AddOption(null, "filter.group.all");
+            AddOption(BuffGroup.Long, "filter.group.normal");
+            AddOption(BuffGroup.Important, "filter.group.important");
+            AddOption(BuffGroup.Short, "filter.group.short");
+            AddOption(BuffGroup.Combat, "filter.group.combat");
+
+            // Toggle popout on button click
+            buttonObj.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                panel.SetActive(!panel.activeSelf);
+            });
+        }
+
         private void MakeFilters(GameObject togglePrefab, Transform content) {
             var filterRect = MakeVerticalRect("filters", content);
             //filterToggles.AddComponent<Image>().color = Color.green;
@@ -734,10 +770,9 @@ namespace BubbleBuffs {
             GameObject showRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
             GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
             GameObject sortByName = MakeToggle(togglePrefab, filterRect, .6f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
-            GameObject showGroupNormal = MakeToggle(togglePrefab, filterRect, .6f, .5f, "filter.group.normal".i8(), "bubble-toggle-show-group-normal", scale);
-            GameObject showGroupImportant = MakeToggle(togglePrefab, filterRect, .6f, .5f, "filter.group.important".i8(), "bubble-toggle-show-group-important", scale);
-            GameObject showGroupShort = MakeToggle(togglePrefab, filterRect, .6f, .5f, "filter.group.short".i8(), "bubble-toggle-show-group-short", scale);
-            GameObject showGroupCombat = MakeToggle(togglePrefab, filterRect, .6f, .5f, "filter.group.combat".i8(), "bubble-toggle-show-group-combat", scale);
+
+            // Group filter popout
+            MakeGroupFilterPopout(togglePrefab, filterRect, scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -761,10 +796,6 @@ namespace BubbleBuffs {
             ShowRequested.BindToView(showRequested);
             ShowNotRequested.BindToView(showNotRequested);
             SortByName.BindToView(sortByName);
-            ShowGroupNormal.BindToView(showGroupNormal);
-            ShowGroupImportant.BindToView(showGroupImportant);
-            ShowGroupShort.BindToView(showGroupShort);
-            ShowGroupCombat.BindToView(showGroupCombat);
 
             CurrentCategory.Selected.Value = Category.Spell;
         }
@@ -827,15 +858,11 @@ namespace BubbleBuffs {
                 if (!ShowShort.value && buff.HideBecause(HideReason.Short))
                     show = false;
 
-                bool showForGroup = buff.InGroup switch {
-                    BuffGroup.Long => ShowGroupNormal.Value,
-                    BuffGroup.Important => ShowGroupImportant.Value,
-                    BuffGroup.Short => ShowGroupShort.Value,
-                    BuffGroup.Combat => ShowGroupCombat.Value,
-                    _ => true
-                };
-                if (!showForGroup)
-                    show = false;
+                // Group filter only applies to requested buffs
+                if (buff.Requested > 0 && GroupFilter.Value.HasValue) {
+                    if (buff.InGroup != GroupFilter.Value.Value)
+                        show = false;
+                }
 
                 widget.SetActive(show);
             }
