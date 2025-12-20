@@ -11,6 +11,7 @@
   "group.normal": "Normal",
   "group.important": "Important",
   "group.short": "Short",
+  "group.combat": "Combat",
   "cat.spells": "Spells",
   "cat.Abilities": "Abilities",
   "cat.Items": "Items",
@@ -21,12 +22,15 @@
   "group.important.tooltip.desc": "Try to cast spells set in the buff window (Important)",
   "group.short.tooltip.header": "Buff Short!",
   "group.short.tooltip.desc": "Try to cast spells set in the buff window (Short)",
+  "group.combat.tooltip.header": "Buff Combat!",
+  "group.combat.tooltip.desc": "Try to cast spells set in the buff window (Combat)",
   "showmap.tooltip.header": "Show islands map",
   "showmap.tooltip.desc": "Display the islands map to pick the next point in your adventure",
 
   "group.normal.log": "Buffed Normal!",
   "group.important.log": "Buffed Important!",
   "group.short.log": "Buffed Short!",
+  "group.combat.log": "Buffed Combat!",
   "log.skipped": "Skipped",
   "log.applied": "Applied",
 
