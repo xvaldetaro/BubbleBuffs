@@ -66,6 +66,14 @@
   "setting-verbose": "Use full animation casting",
   "setting-in-combat": "Allow bubble-buffing in combat",
   "setting-overwritebuff": "Ignore existing buffs",
-  "setting-simpleoverlay": "Portrait overlay fix (Mac)"
+  "setting-simpleoverlay": "Portrait overlay fix (Mac)",
+  "autotrigger.normal": "Auto-trigger Normal per round",
+  "autotrigger.important": "Auto-trigger Important per round",
+  "autotrigger.short": "Auto-trigger Short per round",
+  "autotrigger.combat": "Auto-trigger Combat per round",
+  "spam.long": "Spam Normal every 3s",
+  "spam.short": "Spam Short every 3s",
+  "spam.important": "Spam Important every 3s",
+  "spam.combat": "Spam Combat every 3s"
 
 }

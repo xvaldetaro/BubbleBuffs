@@ -641,6 +641,17 @@ namespace BubbleBuffs {
                 });
             }
 
+            // Spam settings per group
+            foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
+                var groupCopy = group; // Capture for closure
+                var key = $"spam.{group.ToString().ToLower()}";
+                var (toggle, _) = MakeSettingsToggle(togglePrefab, panel.transform, key.i8());
+                toggle.isOn = state.IsSpamEnabled(groupCopy);
+                toggle.onValueChanged.AddListener(enabled => {
+                    state.SetSpamEnabled(groupCopy, enabled);
+                });
+            }
+
             var b = toggleSettings.GetComponent<OwlcatButton>();
             b.SetTooltip(new TooltipTemplateSimple("settings".i8(), "settings-toggle".i8()), new TooltipConfig {
                 InfoCallPCMethod = InfoCallPCMethod.None,
@@ -1686,6 +1697,7 @@ namespace BubbleBuffs {
         public static Sprite[] UnitFrameSprites = new Sprite[2];
 
         public List<OwlcatButton> Buttons = new();
+        public Dictionary<BuffGroup, (OwlcatButton button, Image overlay)> GroupButtons = new();
 
         public static void TryAddFeature(UnitEntityData u, string feature) {
             var bp = Resources.GetBlueprint<BlueprintFeature>(feature);
@@ -1817,7 +1829,7 @@ namespace BubbleBuffs {
                     GameObject.DestroyImmediate(buttonsContainer.transform.GetChild(1).gameObject);
                 }
 
-                void AddButton(string text, string tooltip, ButtonSprites sprites, Action act) {
+                void AddButton(string text, string tooltip, ButtonSprites sprites, BuffGroup group) {
                     var applyBuffsButton = GameObject.Instantiate(prefab, buttonsContainer.transform);
                     applyBuffsButton.SetActive(true);
                     OwlcatButton button = applyBuffsButton.GetComponentInChildren<OwlcatButton>();
@@ -1825,8 +1837,31 @@ namespace BubbleBuffs {
                         pressedSprite = sprites.down,
                         highlightedSprite = sprites.hover,
                     };
+
+                    // Create overlay for spam indicator
+                    var overlayObj = new GameObject("SpamOverlay");
+                    overlayObj.transform.SetParent(applyBuffsButton.transform, false);
+                    var overlay = overlayObj.AddComponent<Image>();
+                    overlay.color = new Color(0.2f, 0.8f, 0.2f, 0.5f);
+                    overlay.raycastTarget = false;
+                    var overlayRect = overlayObj.GetComponent<RectTransform>();
+                    overlayRect.anchorMin = Vector2.zero;
+                    overlayRect.anchorMax = Vector2.one;
+                    overlayRect.sizeDelta = Vector2.zero;
+                    overlayRect.anchoredPosition = Vector2.zero;
+                    overlay.gameObject.SetActive(false);
+
+                    GroupButtons[group] = (button, overlay);
+
                     button.OnLeftClick.AddListener(() => {
-                        act();
+                        if (SpellbookController.state.IsSpamEnabled(group)) {
+                            // Toggle spam active state
+                            SpellbookController.state.ToggleSpamActive(group);
+                            overlay.gameObject.SetActive(SpellbookController.state.IsSpamActive(group));
+                        } else {
+                            // Normal one-shot execution
+                            GlobalBubbleBuffer.Execute(group);
+                        }
                     });
                     button.SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
                         InfoCallPCMethod = InfoCallPCMethod.None
@@ -1839,13 +1874,29 @@ namespace BubbleBuffs {
                 }
 
 
-                AddButton("group.normal.tooltip.header".i8(), "group.normal.tooltip.desc".i8(), applyBuffsSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Long));
-                AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Important));
-                AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Short));
-                AddButton("group.combat.tooltip.header".i8(), "group.combat.tooltip.desc".i8(), applyBuffsCombatSprites, () => GlobalBubbleBuffer.Execute(BuffGroup.Combat));
+                void AddSimpleButton(string text, string tooltip, ButtonSprites sprites, Action act) {
+                    var applyBuffsButton = GameObject.Instantiate(prefab, buttonsContainer.transform);
+                    applyBuffsButton.SetActive(true);
+                    OwlcatButton button = applyBuffsButton.GetComponentInChildren<OwlcatButton>();
+                    button.m_CommonLayer[0].SpriteState = new SpriteState {
+                        pressedSprite = sprites.down,
+                        highlightedSprite = sprites.hover,
+                    };
+                    button.OnLeftClick.AddListener(() => act());
+                    button.SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
+                        InfoCallPCMethod = InfoCallPCMethod.None
+                    });
+                    Buttons.Add(button);
+                    applyBuffsButton.GetComponentInChildren<Image>().sprite = sprites.normal;
+                }
+
+                AddButton("group.normal.tooltip.header".i8(), "group.normal.tooltip.desc".i8(), applyBuffsSprites, BuffGroup.Long);
+                AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, BuffGroup.Important);
+                AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, BuffGroup.Short);
+                AddButton("group.combat.tooltip.header".i8(), "group.combat.tooltip.desc".i8(), applyBuffsCombatSprites, BuffGroup.Combat);
                 if (DungeonController.IsDungeonCampaign) {
                     DungeonShowMap showMap = new();
-                    AddButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
+                    AddSimpleButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
                 }
 
                 Main.Verbose("remove old bubble?");

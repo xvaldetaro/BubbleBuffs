@@ -321,6 +321,60 @@ namespace BubbleBuffs {
             }
         }
 
+        // Auto-trigger settings (persisted)
+        public bool IsAutoTriggerEnabled(BuffGroup group) => SavedState.AutoTriggerGroups.Contains(group);
+
+        public void SetAutoTrigger(BuffGroup group, bool enabled) {
+            if (enabled)
+                SavedState.AutoTriggerGroups.Add(group);
+            else
+                SavedState.AutoTriggerGroups.Remove(group);
+            ActiveAutoTriggers.Remove(group); // Reset active state when toggling
+            Save(true);
+        }
+
+        // Runtime state: is auto-trigger currently active (running)?
+        private HashSet<BuffGroup> ActiveAutoTriggers = new();
+
+        public bool IsAutoTriggerActive(BuffGroup group) =>
+            IsAutoTriggerEnabled(group) && ActiveAutoTriggers.Contains(group);
+
+        public void ToggleAutoTriggerActive(BuffGroup group) {
+            if (ActiveAutoTriggers.Contains(group))
+                ActiveAutoTriggers.Remove(group);
+            else
+                ActiveAutoTriggers.Add(group);
+        }
+
+        // Spam settings (persisted): is spam mode enabled for this group in settings?
+        public bool IsSpamEnabled(BuffGroup group) => SavedState.SpamEnabledGroups.Contains(group);
+
+        public void SetSpamEnabled(BuffGroup group, bool enabled) {
+            if (enabled)
+                SavedState.SpamEnabledGroups.Add(group);
+            else
+                SavedState.SpamEnabledGroups.Remove(group);
+            ActiveSpamGroups.Remove(group); // Reset active state when toggling
+            Save(true);
+        }
+
+        // Runtime state: is spam currently active (looping)?
+        private HashSet<BuffGroup> ActiveSpamGroups = new();
+
+        public bool IsSpamActive(BuffGroup group) =>
+            IsSpamEnabled(group) && ActiveSpamGroups.Contains(group);
+
+        public void ToggleSpamActive(BuffGroup group) {
+            if (ActiveSpamGroups.Contains(group))
+                ActiveSpamGroups.Remove(group);
+            else
+                ActiveSpamGroups.Add(group);
+        }
+
+        public void StopAllSpam() {
+            ActiveSpamGroups.Clear();
+        }
+
         //private static Dictionary<Guid, List<ContextActionApplyBuff>> CachedBuffEffects;
 
         public void AddBuff(UnitEntityData dude, Kingmaker.UnitLogic.Spellbook book, AbilityData spell, AbilityData baseSpell, IReactiveProperty<int> credits, bool newCredit, int creditClamp, int charIndex, bool archmageArmor = false, Category category = Category.Spell) {

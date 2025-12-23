@@ -45,9 +45,80 @@ namespace BubbleBuffs {
         }
 
         public static IBuffExecutionEngine Engine =>
-            GlobalBubbleBuffer.Instance.SpellbookController.state.VerboseCasting 
-                ? new AnimatedExecutionEngine() 
+            GlobalBubbleBuffer.Instance.SpellbookController.state.VerboseCasting
+                ? new AnimatedExecutionEngine()
                 : new InstantExecutionEngine();
+
+        // Auto-trigger state
+        private float combatStartTime = -1f;
+        private int lastExecutedRound = -1;
+        private const float ROUND_DURATION = 6f;
+
+        // Spam state
+        private Dictionary<BuffGroup, float> lastSpamExecutionTime = new() {
+            { BuffGroup.Long, -1f },
+            { BuffGroup.Important, -1f },
+            { BuffGroup.Short, -1f },
+            { BuffGroup.Combat, -1f },
+        };
+        private const float SPAM_INTERVAL = 3f;
+
+        void Update() {
+            var state = GlobalBubbleBuffer.Instance?.SpellbookController?.state;
+
+            // Handle spam groups (works always, not just in combat)
+            if (state != null) {
+                ExecuteSpamGroups(state);
+            }
+
+            // Auto-trigger only works in combat
+            if (!Game.Instance.Player.IsInCombat) {
+                combatStartTime = -1f;
+                lastExecutedRound = -1;
+                return;
+            }
+
+            if (state == null || !state.AllowInCombat) return;
+
+            // Initialize combat start time
+            if (combatStartTime < 0) {
+                combatStartTime = Time.time;
+                lastExecutedRound = -1;
+            }
+
+            // Calculate current round (0-indexed)
+            float elapsed = Time.time - combatStartTime;
+            int currentRound = (int)(elapsed / ROUND_DURATION);
+
+            if (currentRound != lastExecutedRound) {
+                lastExecutedRound = currentRound;
+                ExecuteAutoTriggerGroups(state);
+            }
+        }
+
+        private void ExecuteAutoTriggerGroups(BufferState state) {
+            foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
+                if (state.IsAutoTriggerActive(group)) {
+                    GlobalBubbleBuffer.Execute(group);
+                }
+            }
+        }
+
+        private void ExecuteSpamGroups(BufferState state) {
+            float currentTime = Time.time;
+            foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
+                if (state.IsSpamActive(group)) {
+                    float lastExecution = lastSpamExecutionTime[group];
+                    if (lastExecution < 0 || (currentTime - lastExecution) >= SPAM_INTERVAL) {
+                        lastSpamExecutionTime[group] = currentTime;
+                        GlobalBubbleBuffer.Execute(group);
+                    }
+                } else {
+                    // Reset timer when spam is deactivated
+                    lastSpamExecutionTime[group] = -1f;
+                }
+            }
+        }
     }
     public class BuffExecutor {
         public BufferState State;
