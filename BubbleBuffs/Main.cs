@@ -105,6 +105,7 @@ namespace BubbleBuffs {
 #endif
             CheatsCommon.SendAnalyticEvents?.Set(false);
             modEntry.OnUpdate = OnUpdate;
+            modEntry.OnGUI = OnGUI;
             ModSettings.ModEntry = modEntry;
             ModPath = modEntry.Path;
             Main.Log("LOADING");
@@ -134,6 +135,21 @@ namespace BubbleBuffs {
 
 
             return true;
+        }
+
+        static void OnGUI(UnityModManager.ModEntry modEntry) {
+            if (GUILayout.Button("Reset All Buff Selections", GUILayout.Width(200))) {
+                var state = GlobalBubbleBuffer.Instance?.SpellbookController?.state;
+                if (state != null) {
+                    state.SavedState.Buffs.Clear();
+                    state.StopAllSpam();
+                    state.Save(true);
+                    Log("All buff selections have been reset.");
+                } else {
+                    Log("Cannot reset: No active game loaded.");
+                }
+            }
+            GUILayout.Label("Note: You must have a game loaded to reset buff selections.");
         }
 
         static void OnUpdate(UnityModManager.ModEntry modEntry, float delta) {
