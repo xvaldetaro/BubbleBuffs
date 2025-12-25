@@ -7,6 +7,9 @@ namespace BubbleBuffs.Config {
         private const string FileName = "SpamConfig.json";
 
         [JsonProperty]
+        public bool UseSmartReapply { get; set; } = true;
+
+        [JsonProperty]
         public float ReapplyThresholdSeconds { get; set; } = 6f;
 
         [JsonProperty]
@@ -32,7 +35,7 @@ namespace BubbleBuffs.Config {
                 try {
                     var json = File.ReadAllText(path);
                     _instance = JsonConvert.DeserializeObject<SpamConfig>(json);
-                    Main.Log($"Loaded SpamConfig: ReapplyThreshold={_instance.ReapplyThresholdSeconds}s, CheckInterval={_instance.CheckIntervalSeconds}s");
+                    Main.Log($"Loaded SpamConfig: UseSmartReapply={_instance.UseSmartReapply}, ReapplyThreshold={_instance.ReapplyThresholdSeconds}s, CheckInterval={_instance.CheckIntervalSeconds}s");
                 } catch {
                     Main.Error("Failed to load SpamConfig.json, using defaults.");
                     _instance = new SpamConfig();
@@ -43,6 +46,11 @@ namespace BubbleBuffs.Config {
                 Save();
                 Main.Log($"Created default SpamConfig.json");
             }
+        }
+
+        public static void Reload() {
+            _instance = null;
+            Load();
         }
 
         public static void Save() {

@@ -150,6 +150,13 @@ namespace BubbleBuffs {
                 }
             }
             GUILayout.Label("Note: You must have a game loaded to reset buff selections.");
+
+            GUILayout.Space(10);
+
+            if (GUILayout.Button("Reload Spam Config", GUILayout.Width(200))) {
+                Config.SpamConfig.Reload();
+            }
+            GUILayout.Label("Reloads UserSettings/SpamConfig.json without restarting.");
         }
 
         static void OnUpdate(UnityModManager.ModEntry modEntry, float delta) {

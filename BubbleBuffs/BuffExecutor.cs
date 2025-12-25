@@ -177,21 +177,25 @@ namespace BubbleBuffs {
                     foreach (var (target, caster) in buff.ActualCastQueue) {
                         var forTarget = unitBuffs[target];
 
-                        // Smart reapply logic for spam mode: skip if buff has sufficient time remaining
+                        // Spam mode logic
                         if (isSmartSpam) {
-                            float remaining = buff.BuffsApplied.GetMinRemainingSeconds(forTarget, buff.IgnoreForOverwriteCheck);
-                            if (remaining > BubbleBuffGlobalController.SmartReapplyThreshold) {
-                                thisBuffSkip++;
-                                skippedCasts++;
-                                continue;
-                            }
-
                             // Skip if caster has pending player commands (avoid interrupting manual actions)
                             if (SpamConfig.Instance.SkipIfUnitHasPendingCommands && !caster.who.Commands.Empty) {
                                 thisBuffSkip++;
                                 skippedCasts++;
                                 continue;
                             }
+
+                            // Smart mode: check remaining buff time, only reapply if below threshold
+                            if (SpamConfig.Instance.UseSmartReapply) {
+                                float remaining = buff.BuffsApplied.GetMinRemainingSeconds(forTarget, buff.IgnoreForOverwriteCheck);
+                                if (remaining > BubbleBuffGlobalController.SmartReapplyThreshold) {
+                                    thisBuffSkip++;
+                                    skippedCasts++;
+                                    continue;
+                                }
+                            }
+                            // Simple mode (UseSmartReapply=false): just reapply on every interval
                         } else {
                             // Original behavior for manual execution
                             if (buff.BuffsApplied.IsPresent(forTarget, buff.IgnoreForOverwriteCheck) && !State.OverwriteBuff) {
