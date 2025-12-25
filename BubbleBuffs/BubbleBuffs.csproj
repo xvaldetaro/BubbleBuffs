@@ -46,6 +46,9 @@
     <None Include="Info.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="AbilityWhitelist.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="tutorialcanvas">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

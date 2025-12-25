@@ -436,7 +436,7 @@ namespace BubbleBuffs {
                     SpellNames[spell.Blueprint.AssetGuid.m_Guid] = spell.Name;
                 }
 
-                if (abilityEffect.Empty) {
+                if (abilityEffect.Empty && !Config.AbilityWhitelist.WhitelistedGuids.Contains(spell.Blueprint.AssetGuid.m_Guid.ToString())) {
                     Main.Verbose($"Rejecting {spell.Name} because it has no applied effects", "rejection");
                     return;
                 }
