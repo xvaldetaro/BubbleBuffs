@@ -1473,9 +1473,9 @@ namespace BubbleBuffs {
 
 
 
-        internal void Execute(BuffGroup group) {
+        internal void Execute(BuffGroup group, bool isSmartSpam = false) {
             UnitBuffPartView.StartSuppression();
-            Executor.Execute(group);
+            Executor.Execute(group, isSmartSpam);
             Invoke("EndBuffPartViewSuppression", 1.0f);
         }
 
@@ -1967,8 +1967,8 @@ namespace BubbleBuffs {
 
         }
 
-        public static void Execute(BuffGroup group) {
-            Instance.SpellbookController.Execute(group);
+        public static void Execute(BuffGroup group, bool isSmartSpam = false) {
+            Instance.SpellbookController.Execute(group, isSmartSpam);
         }
 
 

@@ -61,7 +61,9 @@ namespace BubbleBuffs {
             { BuffGroup.Short, -1f },
             { BuffGroup.Combat, -1f },
         };
-        private const float SPAM_INTERVAL = 3f;
+        // These are now configurable via UserSettings/SpamConfig.json
+        private float SpamInterval => SpamConfig.Instance.CheckIntervalSeconds;
+        public static float SmartReapplyThreshold => SpamConfig.Instance.ReapplyThresholdSeconds;
 
         void Update() {
             var state = GlobalBubbleBuffer.Instance?.SpellbookController?.state;
@@ -109,9 +111,9 @@ namespace BubbleBuffs {
             foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
                 if (state.IsSpamActive(group)) {
                     float lastExecution = lastSpamExecutionTime[group];
-                    if (lastExecution < 0 || (currentTime - lastExecution) >= SPAM_INTERVAL) {
+                    if (lastExecution < 0 || (currentTime - lastExecution) >= SpamInterval) {
                         lastSpamExecutionTime[group] = currentTime;
-                        GlobalBubbleBuffer.Execute(group);
+                        GlobalBubbleBuffer.Execute(group, isSmartSpam: true);
                     }
                 } else {
                     // Reset timer when spam is deactivated
@@ -133,7 +135,7 @@ namespace BubbleBuffs {
             { BuffGroup.Combat, -1 },
         };
 
-        public void Execute(BuffGroup buffGroup) {
+        public void Execute(BuffGroup buffGroup, bool isSmartSpam = false) {
             if (Game.Instance.Player.IsInCombat && !State.AllowInCombat)
                 return;
 
@@ -174,10 +176,29 @@ namespace BubbleBuffs {
 
                     foreach (var (target, caster) in buff.ActualCastQueue) {
                         var forTarget = unitBuffs[target];
-                        if (buff.BuffsApplied.IsPresent(forTarget, buff.IgnoreForOverwriteCheck) && !State.OverwriteBuff) {
-                            thisBuffSkip++;
-                            skippedCasts++;
-                            continue;
+
+                        // Smart reapply logic for spam mode: skip if buff has sufficient time remaining
+                        if (isSmartSpam) {
+                            float remaining = buff.BuffsApplied.GetMinRemainingSeconds(forTarget, buff.IgnoreForOverwriteCheck);
+                            if (remaining > BubbleBuffGlobalController.SmartReapplyThreshold) {
+                                thisBuffSkip++;
+                                skippedCasts++;
+                                continue;
+                            }
+
+                            // Skip if caster has pending player commands (avoid interrupting manual actions)
+                            if (SpamConfig.Instance.SkipIfUnitHasPendingCommands && !caster.who.Commands.Empty) {
+                                thisBuffSkip++;
+                                skippedCasts++;
+                                continue;
+                            }
+                        } else {
+                            // Original behavior for manual execution
+                            if (buff.BuffsApplied.IsPresent(forTarget, buff.IgnoreForOverwriteCheck) && !State.OverwriteBuff) {
+                                thisBuffSkip++;
+                                skippedCasts++;
+                                continue;
+                            }
                         }
 
                         attemptedCasts++;
