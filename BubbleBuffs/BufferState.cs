@@ -384,7 +384,13 @@ namespace BubbleBuffs {
             //bool anyTargets = Bubble.Group.Any(t => spell.CanTarget(new TargetWrapper(t)));
             //if (!anyTargets) {
             //    return;
-            //} 
+            //}
+
+            // Filter out cantrips (level 0 spells)
+            if (category == Category.Spell && spell.SpellLevel == 0) {
+                Main.Verbose($"Rejecting {spell.Name} because it is a cantrip (level 0)", "rejection");
+                return;
+            }
 
             if (spell.Blueprint.AssetGuid.m_Guid == MageArmorGuid && !archmageArmor && dude.HasFact(ArchmageArmorFeature)) {
                 Main.Verbose($"        Adding archmage armor", "state");

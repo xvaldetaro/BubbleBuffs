@@ -849,7 +849,9 @@ namespace BubbleBuffs {
                     });
                 } else {
                     view.DisplayOrder.Sort((a, b) => {
-                        return a.discovery - b.discovery;
+                        int levelCompare = a.spellLevel.CompareTo(b.spellLevel);
+                        if (levelCompare != 0) return levelCompare;
+                        return a.name.CompareTo(b.name);
                     });
                 }
 
@@ -2202,7 +2204,7 @@ namespace BubbleBuffs {
 
     class BufferView {
         public Dictionary<BuffKey, GameObject> buffWidgets = new();
-        public List<(BuffKey key, string name, int discovery)> DisplayOrder = new();
+        public List<(BuffKey key, string name, int discovery, int spellLevel)> DisplayOrder = new();
 
         public GameObject buffWindow;
         public GameObject removeFromAll;
@@ -2319,7 +2321,7 @@ namespace BubbleBuffs {
                     widget.ChildObject("School").SetActive(true);
                     widget.SetActive(true);
 
-                    DisplayOrder.Add((buff.Key, buff.Name, DisplayOrder.Count));
+                    DisplayOrder.Add((buff.Key, buff.Name, DisplayOrder.Count, buff.Spell.SpellLevel));
                     buffWidgets[buff.Key] = widget;
                 }
             }

@@ -39,15 +39,17 @@ namespace BubbleBuffs {
         public void Destroy() {
         }
 
-        public void CastSpells(List<CastTask> tasks) {
-            var castingCoroutine = Engine.CreateSpellCastRoutine(tasks);
+        public void CastSpells(List<CastTask> tasks, BuffGroup buffGroup) {
+            var castingCoroutine = GetEngine(buffGroup).CreateSpellCastRoutine(tasks);
             StartCoroutine(castingCoroutine);
         }
 
-        public static IBuffExecutionEngine Engine =>
-            GlobalBubbleBuffer.Instance.SpellbookController.state.VerboseCasting
-                ? new AnimatedExecutionEngine()
-                : new InstantExecutionEngine();
+        public static IBuffExecutionEngine GetEngine(BuffGroup buffGroup) {
+            // VerboseCasting only applies to Combat group
+            bool useAnimated = GlobalBubbleBuffer.Instance.SpellbookController.state.VerboseCasting
+                && buffGroup == BuffGroup.Combat;
+            return useAnimated ? new AnimatedExecutionEngine() : new InstantExecutionEngine();
+        }
 
         // Auto-trigger state
         private float combatStartTime = -1f;
@@ -303,7 +305,7 @@ namespace BubbleBuffs {
                 }
             }
 
-            BubbleBuffGlobalController.Instance.CastSpells(tasks);
+            BubbleBuffGlobalController.Instance.CastSpells(tasks, buffGroup);
 
             string title = buffGroup.i8();
             var messageString = $"{title} {"log.applied".i8()} {actuallyCast}/{attemptedCasts} ({"log.skipped".i8()} {skippedCasts})";

@@ -63,7 +63,7 @@
 
   "settings": "Settings",
   "settings-toggle": "Toggle the BubbleBuffs settings panel",
-  "setting-verbose": "Use full animation casting",
+  "setting-verbose": "Use full animation casting (Combat only)",
   "setting-in-combat": "Allow bubble-buffing in combat",
   "setting-overwritebuff": "Ignore existing buffs",
   "setting-simpleoverlay": "Portrait overlay fix (Mac)",
