@@ -767,6 +767,7 @@ namespace BubbleBuffs {
             AddOption(BuffGroup.Important, "filter.group.important");
             AddOption(BuffGroup.Short, "filter.group.short");
             AddOption(BuffGroup.Combat, "filter.group.combat");
+            AddOption(BuffGroup.Boss, "filter.group.boss");
 
             // Toggle popout on button click
             buttonObj.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
@@ -1284,7 +1285,7 @@ namespace BubbleBuffs {
             groupRect.gameObject.SetActive(false);
             groupRect.SetAnchor(0.9f, 0.6f);
             groupRect.anchoredPosition = new Vector2(-20, 0);
-            groupRect.sizeDelta = new Vector2(140, 130);
+            groupRect.sizeDelta = new Vector2(140, 155);
 
             var buffGroup = new ButtonGroup<BuffGroup>(groupRect, 0.7f);
 
@@ -1292,6 +1293,7 @@ namespace BubbleBuffs {
             buffGroup.Add(BuffGroup.Important, "group.important".i8());
             buffGroup.Add(BuffGroup.Short, "group.short".i8());
             buffGroup.Add(BuffGroup.Combat, "group.combat".i8());
+            buffGroup.Add(BuffGroup.Boss, "group.boss".i8());
 
             castersRect.SetAsLastSibling();
 
@@ -1692,6 +1694,7 @@ namespace BubbleBuffs {
         private ButtonSprites showMapSprites;
         private ButtonSprites applyBuffsImportantSprites;
         private ButtonSprites applyBuffsCombatSprites;
+        private ButtonSprites applyBuffsBossSprites;
         private GameObject buttonsContainer;
         public GameObject bubbleHud;
         public GameObject hudLayout;
@@ -1754,6 +1757,8 @@ namespace BubbleBuffs {
                     applyBuffsImportantSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
                 if (applyBuffsCombatSprites == null)
                     applyBuffsCombatSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
+                if (applyBuffsBossSprites == null)
+                    applyBuffsBossSprites = ButtonSprites.Load("apply_buffs_important", new Vector2Int(95, 95));
                 if (showMapSprites == null)
                     showMapSprites = ButtonSprites.Load("show_map", new Vector2Int(95, 95));
 
@@ -1896,6 +1901,7 @@ namespace BubbleBuffs {
                 AddButton("group.important.tooltip.header".i8(), "group.important.tooltip.desc".i8(), applyBuffsImportantSprites, BuffGroup.Important);
                 AddButton("group.short.tooltip.header".i8(), "group.short.tooltip.desc".i8(), applyBuffsShortSprites, BuffGroup.Short);
                 AddButton("group.combat.tooltip.header".i8(), "group.combat.tooltip.desc".i8(), applyBuffsCombatSprites, BuffGroup.Combat);
+                AddButton("group.boss.tooltip.header".i8(), "group.boss.tooltip.desc".i8(), applyBuffsBossSprites, BuffGroup.Boss);
                 if (DungeonController.IsDungeonCampaign) {
                     DungeonShowMap showMap = new();
                     AddSimpleButton("showmap.tooltip.header".i8(), "showmap.tooltip.desc".i8(), showMapSprites, () => showMap.RunAction());
@@ -2021,6 +2027,13 @@ namespace BubbleBuffs {
         Short,
         Important,
         Combat,
+        Boss,
+    }
+
+    public enum DurationTier {
+        Short,
+        Medium,
+        Long,
     }
 
 

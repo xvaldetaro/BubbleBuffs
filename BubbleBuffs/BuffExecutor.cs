@@ -45,9 +45,9 @@ namespace BubbleBuffs {
         }
 
         public static IBuffExecutionEngine GetEngine(BuffGroup buffGroup) {
-            // VerboseCasting only applies to Combat group
+            // VerboseCasting only applies to Combat and Boss groups
             bool useAnimated = GlobalBubbleBuffer.Instance.SpellbookController.state.VerboseCasting
-                && buffGroup == BuffGroup.Combat;
+                && (buffGroup == BuffGroup.Combat || buffGroup == BuffGroup.Boss);
             return useAnimated ? new AnimatedExecutionEngine() : new InstantExecutionEngine();
         }
 
@@ -62,6 +62,7 @@ namespace BubbleBuffs {
             { BuffGroup.Important, -1f },
             { BuffGroup.Short, -1f },
             { BuffGroup.Combat, -1f },
+            { BuffGroup.Boss, -1f },
         };
         // These are now configurable via UserSettings/SpamConfig.json
         private float SpamInterval => SpamConfig.Instance.CheckIntervalSeconds;
@@ -135,6 +136,7 @@ namespace BubbleBuffs {
             { BuffGroup.Important, -1 },
             { BuffGroup.Short, -1 },
             { BuffGroup.Combat, -1 },
+            { BuffGroup.Boss, -1 },
         };
 
         public void Execute(BuffGroup buffGroup, bool isSmartSpam = false) {

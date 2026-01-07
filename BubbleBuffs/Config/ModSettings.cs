@@ -56,6 +56,7 @@ namespace BubbleBuffs.Config {
                 BuffGroup.Short => "group.short.log".i8(),
                 BuffGroup.Important => "group.important.log".i8(),
                 BuffGroup.Combat => "group.combat.log".i8(),
+                BuffGroup.Boss => "group.boss.log".i8(),
                 _ => "<unknown>"
             };
 

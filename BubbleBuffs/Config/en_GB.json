@@ -13,10 +13,12 @@
   "filter.group.important": "Only Important",
   "filter.group.short": "Only Short",
   "filter.group.combat": "Only Combat",
+  "filter.group.boss": "Only Boss",
   "group.normal": "Normal",
   "group.important": "Important",
   "group.short": "Short",
   "group.combat": "Combat",
+  "group.boss": "Boss",
   "cat.spells": "Spells",
   "cat.Abilities": "Abilities",
   "cat.Items": "Items",
@@ -29,6 +31,8 @@
   "group.short.tooltip.desc": "Try to cast spells set in the buff window (Short)",
   "group.combat.tooltip.header": "Buff Combat!",
   "group.combat.tooltip.desc": "Try to cast spells set in the buff window (Combat)",
+  "group.boss.tooltip.header": "Buff Boss!",
+  "group.boss.tooltip.desc": "Try to cast spells set in the buff window (Boss)",
   "showmap.tooltip.header": "Show islands map",
   "showmap.tooltip.desc": "Display the islands map to pick the next point in your adventure",
 
@@ -36,6 +40,7 @@
   "group.important.log": "Buffed Important!",
   "group.short.log": "Buffed Short!",
   "group.combat.log": "Buffed Combat!",
+  "group.boss.log": "Buffed Boss!",
   "log.skipped": "Skipped",
   "log.applied": "Applied",
 
@@ -63,7 +68,7 @@
 
   "settings": "Settings",
   "settings-toggle": "Toggle the BubbleBuffs settings panel",
-  "setting-verbose": "Use full animation casting (Combat only)",
+  "setting-verbose": "Use full animation casting (Combat/Boss only)",
   "setting-in-combat": "Allow bubble-buffing in combat",
   "setting-overwritebuff": "Ignore existing buffs",
   "setting-simpleoverlay": "Portrait overlay fix (Mac)",
@@ -71,9 +76,11 @@
   "autotrigger.important": "Auto-trigger Important per round",
   "autotrigger.short": "Auto-trigger Short per round",
   "autotrigger.combat": "Auto-trigger Combat per round",
+  "autotrigger.boss": "Auto-trigger Boss per round",
   "spam.long": "Spam Normal every 3s",
   "spam.short": "Spam Short every 3s",
   "spam.important": "Spam Important every 3s",
-  "spam.combat": "Spam Combat every 3s"
+  "spam.combat": "Spam Combat every 3s",
+  "spam.boss": "Spam Boss every 3s"
 
 }

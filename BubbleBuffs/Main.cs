@@ -28,6 +28,9 @@ using System.IO;
 using Kingmaker.Cheats;
 using Newtonsoft.Json;
 using Kingmaker.Blueprints.Items.Shields;
+using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem;
+using Kingmaker.UI.Models.Log.CombatLog_ThreadSystem.LogThreads.Common;
+using System.Linq;
 using Kingmaker.Designers;
 using System.Linq.Expressions;
 
@@ -290,6 +293,17 @@ namespace BubbleBuffs {
         public static void Error(string message) {
             Log(message);
             PFLog.Mods.Error(message);
+        }
+
+        public static void ErrorWithCombatLog(Exception e, string message) {
+            Error(e, message);
+            try {
+                var logMessage = new CombatLogMessage($"[BubbleBuffs Error] {message}: {e.Message}", Color.red, PrefixIcon.RightArrow, null, true);
+                var messageLog = LogThreadService.Instance.m_Logs[LogChannelType.Common].First(x => x is MessageLogThread);
+                messageLog.AddMessage(logMessage);
+            } catch {
+                // Silently fail if combat log is not available
+            }
         }
 
         static HashSet<string> filtersEnabled = new() {
