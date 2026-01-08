@@ -449,7 +449,8 @@ namespace BubbleBuffs {
 
 
                 buff = new BubbleBuff(spell, archmageArmor) {
-                    BuffsApplied = abilityEffect
+                    BuffsApplied = abilityEffect,
+                    DurationRate = abilityEffect.ShortestDurationRate
                 };
 
                 buff.IsMass = spell.Blueprint.IsMass();

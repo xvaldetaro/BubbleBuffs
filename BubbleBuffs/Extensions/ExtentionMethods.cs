@@ -146,7 +146,7 @@ namespace BubbleBuffs.Extensions {
                     LogVerbose(level, $"recursing into spawnArea");
                     if (spawnArea.AreaEffect.TryGetComponent<AbilityAreaEffectBuff>(out var areaBuff) && areaBuff.Buff.IsBeneficial(level + 1)) {
                         LogVerbose(level, $"FOUND: areaBuff {areaBuff.name}");
-                        yield return new AreaBuffEffect(areaBuff, spawnArea.DurationValue.Rate != DurationRate.Rounds);
+                        yield return new AreaBuffEffect(areaBuff, spawnArea.DurationValue.Rate != DurationRate.Rounds, spawnArea.DurationValue?.Rate);
                     }
                 } else if (action is Conditional maybe) {
                     bool takeYes = true;

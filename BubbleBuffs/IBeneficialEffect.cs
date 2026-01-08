@@ -3,6 +3,7 @@ using Kingmaker.EntitySystem.Entities;
 using Kingmaker.Items;
 using Kingmaker.UnitLogic.Abilities.Components.AreaEffects;
 using Kingmaker.UnitLogic.Buffs;
+using Kingmaker.UnitLogic.Mechanics;
 using Kingmaker.UnitLogic.Mechanics.Actions;
 using Kingmaker.Utility;
 using System;
@@ -30,6 +31,7 @@ namespace BubbleBuffs {
         private HashSet<Guid> PrimaryWeaponEnchants;
         private HashSet<Guid> SecondaryWeaponEnchants;
         public PetType? PetType = null;
+        public DurationRate? ShortestDurationRate { get; private set; }
 
         public IEnumerable<(string name, Guid guid)> All {
             get {
@@ -53,7 +55,13 @@ namespace BubbleBuffs {
             set.Add(fact);
         }
 
-        public void AddPetBuff(Guid buff, PetType type, bool isLong) {
+        private void UpdateShortestDuration(DurationRate? rate) {
+            if (rate == null) return;
+            if (ShortestDurationRate == null || rate.Value < ShortestDurationRate.Value)
+                ShortestDurationRate = rate;
+        }
+
+        public void AddPetBuff(Guid buff, PetType type, bool isLong, DurationRate? durationRate = null) {
             if (PetType != null && type != PetType) {
                 Main.Error("Could not add pet buff with different pet type");
                 return;
@@ -62,19 +70,23 @@ namespace BubbleBuffs {
             Add(ref AppliedPetBuffs, buff);
             PetType = type;
             IsLong |= isLong;
+            UpdateShortestDuration(durationRate);
         }
 
-        public void AddBuff(Guid buff, bool isLong) {
+        public void AddBuff(Guid buff, bool isLong, DurationRate? durationRate = null) {
             Add(ref AppliedBuffs, buff);
             IsLong |= isLong;
+            UpdateShortestDuration(durationRate);
         }
-        public void AddPrimaryWeaponEnchant(Guid buff, bool isLong) {
+        public void AddPrimaryWeaponEnchant(Guid buff, bool isLong, DurationRate? durationRate = null) {
             Add(ref PrimaryWeaponEnchants, buff);
             IsLong |= isLong;
+            UpdateShortestDuration(durationRate);
         }
-        public void AddSecondaryWeaponEnchnant(Guid buff, bool isLong) {
+        public void AddSecondaryWeaponEnchnant(Guid buff, bool isLong, DurationRate? durationRate = null) {
             Add(ref SecondaryWeaponEnchants, buff);
             IsLong |= isLong;
+            UpdateShortestDuration(durationRate);
         }
 
         public AbilityCombinedEffects(IEnumerable<IBeneficialEffect> beneficialEffects) {
@@ -160,23 +172,27 @@ namespace BubbleBuffs {
     public interface IBeneficialEffect {
         public void AppendTo(AbilityCombinedEffects effect);
         public PetType? PetType { get; set; }
+        public DurationRate? DurationRate { get; }
     }
     public class AreaBuffEffect : IBeneficialEffect {
 
         public readonly Guid Applied;
         public readonly bool IsLong;
-        public AreaBuffEffect(AbilityAreaEffectBuff action, bool isLong) {
+        public DurationRate? DurationRate { get; private set; }
+
+        public AreaBuffEffect(AbilityAreaEffectBuff action, bool isLong, DurationRate? durationRate = null) {
             Applied = action.Buff.AssetGuid.m_Guid;
             IsLong = isLong;
+            DurationRate = durationRate;
         }
 
         public PetType? PetType { get; set; }
 
         public void AppendTo(AbilityCombinedEffects effect) {
             if (PetType != null)
-                effect.AddPetBuff(Applied, PetType.Value, IsLong);
+                effect.AddPetBuff(Applied, PetType.Value, IsLong, DurationRate);
             else
-                effect.AddBuff(Applied, IsLong);
+                effect.AddBuff(Applied, IsLong, DurationRate);
         }
     }
 
@@ -184,25 +200,29 @@ namespace BubbleBuffs {
 
         public readonly Guid Applied = Guid.Empty;
         public readonly bool IsLong;
-        public  BuffEffect(ContextActionApplyBuff action) {
+        public DurationRate? DurationRate { get; private set; }
+
+        public BuffEffect(ContextActionApplyBuff action) {
             if (action.Buff == null) return;
             Applied = action.Buff.AssetGuid.m_Guid;
             IsLong = action.IsLong();
+            DurationRate = action.DurationValue?.Rate;
         }
 
         public BuffEffect(Guid applied) {
             Applied = applied;
             IsLong = true;
+            DurationRate = null;
         }
 
         public PetType? PetType { get; set; }
 
         public void AppendTo(AbilityCombinedEffects effect) {
             if (Applied != Guid.Empty) {
-            if (PetType != null)
-                effect.AddPetBuff(Applied, PetType.Value, IsLong);
+                if (PetType != null)
+                    effect.AddPetBuff(Applied, PetType.Value, IsLong, DurationRate);
                 else
-                    effect.AddBuff(Applied, IsLong);
+                    effect.AddBuff(Applied, IsLong, DurationRate);
             }
         }
     }
@@ -212,9 +232,10 @@ namespace BubbleBuffs {
         public readonly bool PrimaryWeapon;
         public readonly bool SecondaryWeapon;
         public readonly bool IsLong;
+        public DurationRate? DurationRate { get; private set; }
 
         public PetType? PetType { get; set; }
-        
+
         public WornItemEnchantmentEffect(ContextActionEnchantWornItem action) {
             Applied = action.Enchantment.AssetGuid.m_Guid;
             if (action.Slot == Kingmaker.UI.GenericSlot.EquipSlotBase.SlotType.PrimaryHand)
@@ -223,12 +244,13 @@ namespace BubbleBuffs {
                 SecondaryWeapon = true;
 
             IsLong = action.IsLong();
+            DurationRate = action.DurationValue?.Rate;
         }
         public void AppendTo(AbilityCombinedEffects effect) {
             if (PrimaryWeapon)
-                effect.AddPrimaryWeaponEnchant(Applied, IsLong);
+                effect.AddPrimaryWeaponEnchant(Applied, IsLong, DurationRate);
             else if (SecondaryWeapon)
-                effect.AddSecondaryWeaponEnchnant(Applied, IsLong);
+                effect.AddSecondaryWeaponEnchnant(Applied, IsLong, DurationRate);
         }
     }
 

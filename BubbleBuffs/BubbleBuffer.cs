@@ -412,12 +412,14 @@ namespace BubbleBuffs {
         }
 
         public ReactiveProperty<bool> SortByName = new(false);
+        public ReactiveProperty<bool> SortByDuration = new(false);
         public ReactiveProperty<bool> ShowNotRequested = new(true);
         public ReactiveProperty<bool> ShowRequested = new(true);
         public ReactiveProperty<bool> ShowShort = new(true);
         public ReactiveProperty<bool> ShowHidden = new(false);
         public ReactiveProperty<string> NameFilter = new("");
         public ReactiveProperty<BuffGroup?> GroupFilter = new(null); // null = show all groups
+        public ReactiveProperty<DurationFilter?> DurationFilterProp = new(null); // null = show all durations
         public ButtonGroup<Category> CurrentCategory;
 
         private List<UnitEntityData> Group => Game.Instance.SelectionCharacter.ActualGroup;
@@ -507,12 +509,18 @@ namespace BubbleBuffs {
             GroupFilter.Subscribe<BuffGroup?>(group => {
                 RefreshFiltering();
             });
+            DurationFilterProp.Subscribe<DurationFilter?>(filter => {
+                RefreshFiltering();
+            });
             NameFilter.Subscribe<string>(val => {
                 if (search.InputField.text != val)
                     search.InputField.text = val;
                 RefreshFiltering();
             });
             SortByName.Subscribe<bool>(show => {
+                RefreshFiltering();
+            });
+            SortByDuration.Subscribe<bool>(show => {
                 RefreshFiltering();
             });
 
@@ -775,6 +783,55 @@ namespace BubbleBuffs {
             });
         }
 
+        private TextMeshProUGUI durationFilterLabel;
+
+        private void MakeDurationFilterPopout(GameObject togglePrefab, Transform parent, float scale) {
+            // Create button container
+            var buttonObj = MakeButton("filter.duration.all".i8(), parent, scale);
+            durationFilterLabel = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
+
+            // Create popout panel
+            var actionBarView = UIHelpers.StaticRoot.Find("NestedCanvas1/ActionBarPcView").GetComponent<ActionBarPCView>();
+            var panel = GameObject.Instantiate(actionBarView.m_DragSlot.m_ConvertedView.gameObject, buttonObj.transform);
+            panel.DestroyComponents<ActionBarConvertedPCView>();
+            panel.DestroyComponents<GridLayoutGroup>();
+            panel.SetActive(false);
+            panel.Rect().SetAnchor(1, 0.5f);
+            panel.Rect().pivot = new Vector2(0, 0.5f);
+            panel.Rect().anchoredPosition = new Vector2(5, 0);
+            panel.ChildObject("Background").GetComponent<Image>().raycastTarget = true;
+
+            var popGrid = panel.AddComponent<GridLayoutGroup>();
+            popGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            popGrid.constraintCount = 1;
+            popGrid.cellSize = new Vector2(200, 30);
+            popGrid.padding.left = 15;
+            popGrid.padding.top = 8;
+            popGrid.padding.bottom = 8;
+
+            // Create option buttons
+            void AddOption(DurationFilter? filter, string labelKey) {
+                var optionButton = MakeButton(labelKey.i8(), panel.transform, 0.8f);
+                optionButton.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                    DurationFilterProp.Value = filter;
+                    durationFilterLabel.text = labelKey.i8();
+                    panel.SetActive(false);
+                });
+            }
+
+            AddOption(null, "filter.duration.all");
+            AddOption(DurationFilter.Rounds, "filter.duration.rounds");
+            AddOption(DurationFilter.Minutes, "filter.duration.minutes");
+            AddOption(DurationFilter.TenMinutes, "filter.duration.tenminutes");
+            AddOption(DurationFilter.Hours, "filter.duration.hours");
+            AddOption(DurationFilter.Extended, "filter.duration.extended");
+
+            // Toggle popout on button click
+            buttonObj.GetComponentInChildren<OwlcatButton>().OnLeftClick.AddListener(() => {
+                panel.SetActive(!panel.activeSelf);
+            });
+        }
+
         private void MakeFilters(GameObject togglePrefab, Transform content) {
             var filterRect = MakeVerticalRect("filters", content);
             //filterToggles.AddComponent<Image>().color = Color.green;
@@ -797,9 +854,13 @@ namespace BubbleBuffs {
             GameObject showRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showreq".i8(), "bubble-toggle-show-requested", scale);
             GameObject showNotRequested = MakeToggle(togglePrefab, filterRect, .6f, .5f, "showNOTreq".i8(), "bubble-toggle-show-not-requested", scale);
             GameObject sortByName = MakeToggle(togglePrefab, filterRect, .6f, .5f, "sort.name".i8(), "bubble-toggle-sort-by-name", scale);
+            GameObject sortByDuration = MakeToggle(togglePrefab, filterRect, .6f, .5f, "sort.duration".i8(), "bubble-toggle-sort-by-duration", scale);
 
             // Group filter popout
             MakeGroupFilterPopout(togglePrefab, filterRect, scale);
+
+            // Duration filter popout
+            MakeDurationFilterPopout(togglePrefab, filterRect, scale);
 
             search.InputField.onValueChanged.AddListener(val => {
                 NameFilter.Value = val;
@@ -823,18 +884,43 @@ namespace BubbleBuffs {
             ShowRequested.BindToView(showRequested);
             ShowNotRequested.BindToView(showNotRequested);
             SortByName.BindToView(sortByName);
+            SortByDuration.BindToView(sortByDuration);
 
             CurrentCategory.Selected.Value = Category.Spell;
         }
 
         private bool previousSortByName = false;
+        private bool previousSortByDuration = false;
+
+        private static int CompareDurationRate(Kingmaker.UnitLogic.Mechanics.DurationRate? a, Kingmaker.UnitLogic.Mechanics.DurationRate? b) {
+            // null (permanent/unknown) goes last
+            if (!a.HasValue && !b.HasValue) return 0;
+            if (!a.HasValue) return 1;
+            if (!b.HasValue) return -1;
+            return a.Value.CompareTo(b.Value);
+        }
 
         private void RefreshFiltering() {
             if (state.BuffList == null)
                 return;
 
-            if (previousSortByName != SortByName.Value) {
-                if (SortByName.Value) {
+            bool sortChanged = previousSortByName != SortByName.Value || previousSortByDuration != SortByDuration.Value;
+            if (sortChanged) {
+                if (SortByDuration.Value) {
+                    // Sort by duration, then level, then name
+                    view.DisplayOrder.Sort((a, b) => {
+                        // Duration rate comparison (null/permanent goes last)
+                        int durationCompare = CompareDurationRate(a.durationRate, b.durationRate);
+                        if (durationCompare != 0) return durationCompare;
+
+                        // Then by level
+                        int levelCompare = a.spellLevel.CompareTo(b.spellLevel);
+                        if (levelCompare != 0) return levelCompare;
+
+                        // Then by name
+                        return a.name.CompareTo(b.name);
+                    });
+                } else if (SortByName.Value) {
                     view.DisplayOrder.Sort((a, b) => {
                         if (a.name == b.name) {
                             if (a.key.MetamagicMask == 0 && b.key.MetamagicMask > 0) {
@@ -857,6 +943,7 @@ namespace BubbleBuffs {
                 }
 
                 previousSortByName = SortByName.Value;
+                previousSortByDuration = SortByDuration.Value;
                 foreach (var k in view.DisplayOrder) {
                     view.buffWidgets[k.key].transform.SetAsLastSibling();
                 }
@@ -891,6 +978,26 @@ namespace BubbleBuffs {
                 if (buff.Requested > 0 && GroupFilter.Value.HasValue) {
                     if (buff.InGroup != GroupFilter.Value.Value)
                         show = false;
+                }
+
+                // Duration filter
+                if (DurationFilterProp.Value.HasValue) {
+                    var filter = DurationFilterProp.Value.Value;
+                    if (filter == DurationFilter.Extended) {
+                        if (!buff.IsExtended)
+                            show = false;
+                    } else {
+                        // Map DurationFilter to DurationRate
+                        var targetRate = filter switch {
+                            DurationFilter.Rounds => Kingmaker.UnitLogic.Mechanics.DurationRate.Rounds,
+                            DurationFilter.Minutes => Kingmaker.UnitLogic.Mechanics.DurationRate.Minutes,
+                            DurationFilter.TenMinutes => Kingmaker.UnitLogic.Mechanics.DurationRate.TenMinutes,
+                            DurationFilter.Hours => Kingmaker.UnitLogic.Mechanics.DurationRate.Hours,
+                            _ => Kingmaker.UnitLogic.Mechanics.DurationRate.Rounds
+                        };
+                        if (buff.DurationRate != targetRate)
+                            show = false;
+                    }
                 }
 
                 widget.SetActive(show);
@@ -2036,6 +2143,14 @@ namespace BubbleBuffs {
         Long,
     }
 
+    public enum DurationFilter {
+        Rounds,      // 1 round/level
+        Minutes,     // 1 min/level
+        TenMinutes,  // 10 min/level
+        Hours,       // 1 hour/level
+        Extended,    // Has Extend metamagic
+    }
+
 
     class ButtonSprites {
         public Sprite normal;
@@ -2217,7 +2332,7 @@ namespace BubbleBuffs {
 
     class BufferView {
         public Dictionary<BuffKey, GameObject> buffWidgets = new();
-        public List<(BuffKey key, string name, int discovery, int spellLevel)> DisplayOrder = new();
+        public List<(BuffKey key, string name, int discovery, int spellLevel, Kingmaker.UnitLogic.Mechanics.DurationRate? durationRate)> DisplayOrder = new();
 
         public GameObject buffWindow;
         public GameObject removeFromAll;
@@ -2334,7 +2449,7 @@ namespace BubbleBuffs {
                     widget.ChildObject("School").SetActive(true);
                     widget.SetActive(true);
 
-                    DisplayOrder.Add((buff.Key, buff.Name, DisplayOrder.Count, buff.Spell.SpellLevel));
+                    DisplayOrder.Add((buff.Key, buff.Name, DisplayOrder.Count, buff.Spell.SpellLevel, buff.DurationRate));
                     buffWidgets[buff.Key] = widget;
                 }
             }

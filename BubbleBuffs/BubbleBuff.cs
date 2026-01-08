@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UniRx;
+using Kingmaker.UnitLogic.Mechanics;
 using Kingmaker.UnitLogic.Mechanics.Actions;
 using BubbleBuffs.Extensions;
 using Newtonsoft.Json;
@@ -48,6 +49,7 @@ namespace BubbleBuffs {
     public class BubbleBuff {
         public BuffGroup InGroup = BuffGroup.Long;
         public DurationTier DurationTier = DurationTier.Long;
+        public DurationRate? DurationRate = null;
         public AbilityData Spell;
         HashSet<string> wanted = new();
         HashSet<string> notWanted = new();
@@ -121,6 +123,7 @@ namespace BubbleBuffs {
         public List<(string, BuffProvider)> ActualCastQueue;
 
         public Metamagic[] Metamagics;
+        public bool IsExtended => Metamagics?.Contains(Metamagic.Extend) ?? false;
 
         public BubbleBuff(AbilityData spell, bool archmageArmor) {
             this.Spell = spell;
