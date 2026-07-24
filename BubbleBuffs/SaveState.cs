@@ -34,8 +34,6 @@ namespace BubbleBuffs {
         [JsonProperty]
         public HashSet<BuffGroup> AutoTriggerGroups = new();
         [JsonProperty]
-        public HashSet<BuffGroup> SpamEnabledGroups = new();
-        [JsonProperty]
         public int Version;
     }
 

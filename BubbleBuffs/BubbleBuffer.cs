@@ -649,17 +649,6 @@ namespace BubbleBuffs {
                 });
             }
 
-            // Spam settings per group
-            foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
-                var groupCopy = group; // Capture for closure
-                var key = $"spam.{group.ToString().ToLower()}";
-                var (toggle, _) = MakeSettingsToggle(togglePrefab, panel.transform, key.i8());
-                toggle.isOn = state.IsSpamEnabled(groupCopy);
-                toggle.onValueChanged.AddListener(enabled => {
-                    state.SetSpamEnabled(groupCopy, enabled);
-                });
-            }
-
             var b = toggleSettings.GetComponent<OwlcatButton>();
             b.SetTooltip(new TooltipTemplateSimple("settings".i8(), "settings-toggle".i8()), new TooltipConfig {
                 InfoCallPCMethod = InfoCallPCMethod.None,
@@ -1584,9 +1573,9 @@ namespace BubbleBuffs {
 
 
 
-        internal void Execute(BuffGroup group, bool isSmartSpam = false) {
+        internal void Execute(BuffGroup group) {
             UnitBuffPartView.StartSuppression();
-            Executor.Execute(group, isSmartSpam);
+            Executor.Execute(group);
             Invoke("EndBuffPartViewSuppression", 1.0f);
         }
 
@@ -1809,7 +1798,7 @@ namespace BubbleBuffs {
         public static Sprite[] UnitFrameSprites = new Sprite[2];
 
         public List<OwlcatButton> Buttons = new();
-        public Dictionary<BuffGroup, (OwlcatButton button, Image overlay)> GroupButtons = new();
+        public Dictionary<BuffGroup, OwlcatButton> GroupButtons = new();
 
         public static void TryAddFeature(UnitEntityData u, string feature) {
             var bp = Resources.GetBlueprint<BlueprintFeature>(feature);
@@ -1952,30 +1941,10 @@ namespace BubbleBuffs {
                         highlightedSprite = sprites.hover,
                     };
 
-                    // Create overlay for spam indicator
-                    var overlayObj = new GameObject("SpamOverlay");
-                    overlayObj.transform.SetParent(applyBuffsButton.transform, false);
-                    var overlay = overlayObj.AddComponent<Image>();
-                    overlay.color = new Color(0.2f, 0.8f, 0.2f, 0.5f);
-                    overlay.raycastTarget = false;
-                    var overlayRect = overlayObj.GetComponent<RectTransform>();
-                    overlayRect.anchorMin = Vector2.zero;
-                    overlayRect.anchorMax = Vector2.one;
-                    overlayRect.sizeDelta = Vector2.zero;
-                    overlayRect.anchoredPosition = Vector2.zero;
-                    overlay.gameObject.SetActive(false);
-
-                    GroupButtons[group] = (button, overlay);
+                    GroupButtons[group] = button;
 
                     button.OnLeftClick.AddListener(() => {
-                        if (SpellbookController.state.IsSpamEnabled(group)) {
-                            // Toggle spam active state
-                            SpellbookController.state.ToggleSpamActive(group);
-                            overlay.gameObject.SetActive(SpellbookController.state.IsSpamActive(group));
-                        } else {
-                            // Normal one-shot execution
-                            GlobalBubbleBuffer.Execute(group);
-                        }
+                        GlobalBubbleBuffer.Execute(group);
                     });
                     button.SetTooltip(new TooltipTemplateSimple(text, tooltip), new TooltipConfig {
                         InfoCallPCMethod = InfoCallPCMethod.None
@@ -2082,8 +2051,8 @@ namespace BubbleBuffs {
 
         }
 
-        public static void Execute(BuffGroup group, bool isSmartSpam = false) {
-            Instance.SpellbookController.Execute(group, isSmartSpam);
+        public static void Execute(BuffGroup group) {
+            Instance.SpellbookController.Execute(group);
         }
 
 

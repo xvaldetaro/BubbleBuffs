@@ -1,4 +1,3 @@
-﻿using BubbleBuffs.Config;
 using Kingmaker;
 using Kingmaker.Blueprints;
 using Kingmaker.Blueprints.Classes;
@@ -56,25 +55,8 @@ namespace BubbleBuffs {
         private int lastExecutedRound = -1;
         private const float ROUND_DURATION = 6f;
 
-        // Spam state
-        private Dictionary<BuffGroup, float> lastSpamExecutionTime = new() {
-            { BuffGroup.Long, -1f },
-            { BuffGroup.Important, -1f },
-            { BuffGroup.Short, -1f },
-            { BuffGroup.Combat, -1f },
-            { BuffGroup.Boss, -1f },
-        };
-        // These are now configurable via UserSettings/SpamConfig.json
-        private float SpamInterval => SpamConfig.Instance.CheckIntervalSeconds;
-        public static float SmartReapplyThreshold => SpamConfig.Instance.ReapplyThresholdSeconds;
-
         void Update() {
             var state = GlobalBubbleBuffer.Instance?.SpellbookController?.state;
-
-            // Handle spam groups (works always, not just in combat)
-            if (state != null) {
-                ExecuteSpamGroups(state);
-            }
 
             // Auto-trigger only works in combat
             if (!Game.Instance.Player.IsInCombat) {
@@ -108,22 +90,6 @@ namespace BubbleBuffs {
                 }
             }
         }
-
-        private void ExecuteSpamGroups(BufferState state) {
-            float currentTime = Time.time;
-            foreach (BuffGroup group in Enum.GetValues(typeof(BuffGroup))) {
-                if (state.IsSpamActive(group)) {
-                    float lastExecution = lastSpamExecutionTime[group];
-                    if (lastExecution < 0 || (currentTime - lastExecution) >= SpamInterval) {
-                        lastSpamExecutionTime[group] = currentTime;
-                        GlobalBubbleBuffer.Execute(group, isSmartSpam: true);
-                    }
-                } else {
-                    // Reset timer when spam is deactivated
-                    lastSpamExecutionTime[group] = -1f;
-                }
-            }
-        }
     }
     public class BuffExecutor {
         public BufferState State;
@@ -139,7 +105,7 @@ namespace BubbleBuffs {
             { BuffGroup.Boss, -1 },
         };
 
-        public void Execute(BuffGroup buffGroup, bool isSmartSpam = false) {
+        public void Execute(BuffGroup buffGroup) {
             if (Game.Instance.Player.IsInCombat && !State.AllowInCombat)
                 return;
 
@@ -181,32 +147,10 @@ namespace BubbleBuffs {
                     foreach (var (target, caster) in buff.ActualCastQueue) {
                         var forTarget = unitBuffs[target];
 
-                        // Spam mode logic
-                        if (isSmartSpam) {
-                            // Skip if caster has pending player commands (avoid interrupting manual actions)
-                            if (SpamConfig.Instance.SkipIfUnitHasPendingCommands && !caster.who.Commands.Empty) {
-                                thisBuffSkip++;
-                                skippedCasts++;
-                                continue;
-                            }
-
-                            // Smart mode: check remaining buff time, only reapply if below threshold
-                            if (SpamConfig.Instance.UseSmartReapply) {
-                                float remaining = buff.BuffsApplied.GetMinRemainingSeconds(forTarget, buff.IgnoreForOverwriteCheck);
-                                if (remaining > BubbleBuffGlobalController.SmartReapplyThreshold) {
-                                    thisBuffSkip++;
-                                    skippedCasts++;
-                                    continue;
-                                }
-                            }
-                            // Simple mode (UseSmartReapply=false): just reapply on every interval
-                        } else {
-                            // Original behavior for manual execution
-                            if (buff.BuffsApplied.IsPresent(forTarget, buff.IgnoreForOverwriteCheck) && !State.OverwriteBuff) {
-                                thisBuffSkip++;
-                                skippedCasts++;
-                                continue;
-                            }
+                        if (buff.BuffsApplied.IsPresent(forTarget, buff.IgnoreForOverwriteCheck) && !State.OverwriteBuff) {
+                            thisBuffSkip++;
+                            skippedCasts++;
+                            continue;
                         }
 
                         attemptedCasts++;

@@ -83,11 +83,6 @@
   "autotrigger.important": "Auto-trigger Important per round",
   "autotrigger.short": "Auto-trigger Short per round",
   "autotrigger.combat": "Auto-trigger Combat per round",
-  "autotrigger.boss": "Auto-trigger Boss per round",
-  "spam.long": "Spam Normal every 3s",
-  "spam.short": "Spam Short every 3s",
-  "spam.important": "Spam Important every 3s",
-  "spam.combat": "Spam Combat every 3s",
-  "spam.boss": "Spam Boss every 3s"
+  "autotrigger.boss": "Auto-trigger Boss per round"
 
 }
